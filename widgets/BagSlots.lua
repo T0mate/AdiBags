@@ -201,13 +201,13 @@ end
 -- Regular bag buttons
 --------------------------------------------------------------------------------
 
-local bagButtonClass, bagButtonProto = addon:NewClass("BagSlotButton", "Button", "ItemButtonTemplate", "ABEvent-1.0")
+local bagButtonClass, bagButtonProto = addon:NewClass("BagSlotButton", "Button", "ItemButtonTemplate", "AceEvent-3.0")
 
 function bagButtonProto:OnCreate(bag)
 	self.bag = bag
 	self.invSlot = ContainerIDToInventoryID(bag)
 
-	self:GetNormalTexture():SetSize(64 * 37 / ITEM_SIZE, 64 * 37 / ITEM_SIZE)
+	self:GetNormalTexture():SetSize(ITEM_SIZE, ITEM_SIZE)
 	self:SetSize(ITEM_SIZE, ITEM_SIZE)
 
 	self:EnableMouse(true)
@@ -454,7 +454,7 @@ function addon:CreateBagSlotPanel(container, name, bags, isBank)
 	self:SetWidth(x + BAG_INSET)
 	self:SetHeight(BAG_INSET + TOP_PADDING + ITEM_SIZE)
 
-	LibStub('ABEvent-1.0').RegisterMessage(self:GetName(), 'AdiBags_ConfigChanged', Panel_ConfigChanged, self)
+	LibStub('AceEvent-3.0').RegisterMessage(self:GetName(), 'AdiBags_ConfigChanged', Panel_ConfigChanged, self)
 	Panel_UpdateSkin(self)
 
 	return self

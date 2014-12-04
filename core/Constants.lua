@@ -82,10 +82,10 @@ addon.FAMILY_ICONS = {
 	[0x10000] = [[Interface\Icons\INV_Misc_Bag_Cooking]], -- Refrigerator
 }
 
-addon.ITEM_SIZE = 37
+addon.ITEM_SIZE = 28
 addon.ITEM_SPACING = 4
 addon.SECTION_SPACING = addon.ITEM_SIZE / 3 + addon.ITEM_SPACING
-addon.BAG_INSET = 8
+addon.BAG_INSET = 11
 addon.TOP_PADDING = 32
 addon.HEADER_SIZE = 14 + addon.ITEM_SPACING
 

@@ -43,7 +43,7 @@ local ITEM_SIZE = addon.ITEM_SIZE
 -- Button initialization
 --------------------------------------------------------------------------------
 
-local buttonClass, buttonProto = addon:NewClass("ItemButton", "Button", "ContainerFrameItemButtonTemplate", "ABEvent-1.0")
+local buttonClass, buttonProto = addon:NewClass("ItemButton", "Button", "ContainerFrameItemButtonTemplate", "AceEvent-3.0")
 
 local childrenNames = { "Cooldown", "IconTexture", "IconQuestTexture", "Count", "Stock", "NormalTexture", "NewItemTexture" }
 
@@ -54,6 +54,16 @@ function buttonProto:OnCreate()
 			self[childName] = _G[name..childName]
 		end
 	end
+
+	self.borderTextureFrameIcon = CreateFrame("Frame", '', self)
+	self.borderTextureFrameIcon:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", -1, -1);
+	self.borderTextureFrameIcon:SetPoint("TOPRIGHT", self, "TOPRIGHT", 1, 1);
+	self.borderTextureIcon = self.borderTextureFrameIcon:CreateTexture()
+	self.borderTextureIcon:SetAllPoints(self.borderTextureFrameIcon)
+	self.borderTextureIcon:SetVertexColor(1, 1, 1, 1)
+	--print(self.borderTextureFrameIcon:GetFrameStrata())
+	--print(self.borderTextureFrameIcon:GetFrameLevel())
+
 	self:RegisterForDrag("LeftButton")
 	self:RegisterForClicks("LeftButtonUp","RightButtonUp")
 	self:SetScript('OnShow', self.OnShow)
@@ -272,9 +282,15 @@ function buttonProto:Update()
 		icon:SetTexture(self.texture)
 		icon:SetTexCoord(0,1,0,1)
 	else
-		icon:SetTexture([[Interface\BUTTONS\UI-EmptySlot]])
+		icon:SetTexture(.1,.1,.1,1)
+		--icon:SetTexture([[Interface\BUTTONS\UI-EmptySlot]])
 		icon:SetTexCoord(12/64, 51/64, 12/64, 51/64)
 	end
+
+	self.borderTextureIcon:GetParent():SetFrameLevel(1)
+	--print(icon:GetParent():GetFrameLevel())
+	--print(self.borderTextureIcon:GetParent():GetFrameStrata())
+	--print(icon:GetParent():GetFrameStrata())
 	local tag = (not self.itemId or addon.db.profile.showBagType) and addon:GetFamilyTag(self.bagFamily)
 	if tag then
 		self.Stock:SetText(tag)
@@ -363,21 +379,14 @@ function buttonProto:UpdateBorder(isolatedEvent)
 	if self.hasItem then
 		texture, r, g, b, a, x1, x2, y1, y2, blendMode = GetBorder(self.bag, self.slot, self.itemLink or self.itemId, addon.db.profile)
 	end
-	if not texture then
-		self.IconQuestTexture:Hide()
-	else
-		local border = self.IconQuestTexture
-		if texture == true then
-			border:SetVertexColor(1, 1, 1, 1)
-			border:SetTexture(r or 1, g or 1, b or 1, a or 1)
-		else
-			border:SetTexture(texture)
-			border:SetVertexColor(r or 1, g or 1, b or 1, a or 1)
-		end
-		border:SetTexCoord(x1 or 0, x2 or 1, y1 or 0, y2 or 1)
-		border:SetBlendMode(blendMode or "BLEND")
-		border:Show()
-	end
+	self.IconQuestTexture:Hide()
+	self.IconQuestTexture:SetSize(addon.ITEM_SIZE+3, addon.ITEM_SIZE+3)
+	self.NormalTexture:SetSize(addon.ITEM_SIZE+20, addon.ITEM_SIZE+20)
+	local border = self.borderTextureIcon
+	border:SetTexture(r or 1, g or 1, b or 1, a or 1)
+	--border:SetTexCoord(x1 or 0, x2 or 1, y1 or 0, y2 or 1)
+	--border:SetBlendMode("DISABLE")
+	border:Show()
 	if self.JunkIcon then
 		local quality = self.hasItem and select(3, GetItemInfo(self.itemLink or self.itemId))
 		self.JunkIcon:SetShown(quality == LE_ITEM_QUALITY_POOR and addon:GetInteractingWindow() == "MERCHANT")
@@ -391,7 +400,7 @@ end
 -- Item stack button
 --------------------------------------------------------------------------------
 
-local stackClass, stackProto = addon:NewClass("StackButton", "Frame", "ABEvent-1.0")
+local stackClass, stackProto = addon:NewClass("StackButton", "Frame", "AceEvent-3.0")
 addon:CreatePool(stackClass, "AcquireStackButton")
 
 function stackProto:OnCreate()

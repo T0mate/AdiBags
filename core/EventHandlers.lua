@@ -21,7 +21,7 @@ local CBH = LibStub('CallbackHandler-1.0')
 
 -- Event dispatching and messagging
 
-local eventLib = LibStub:NewLibrary("ABEvent-1.0", 1)
+local eventLib = LibStub:NewLibrary("AceEvent-3.0", 1)
 
 local events = CBH:New(eventLib, 'RegisterEvent', 'UnregisterEvent', 'UnregisterAllEvents')
 local eventFrame = CreateFrame("Frame")
@@ -45,7 +45,7 @@ end
 
 -- Event/message bucketing
 
-local bucketLib = LibStub:NewLibrary("ABBucket-1.0", 1)
+local bucketLib = LibStub:NewLibrary("AceBucket-3.0", 1)
 local buckets = {}
 
 local function RegisterBucket(target, event, delay, callback, regFunc, unregFunc)
