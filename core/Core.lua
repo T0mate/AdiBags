@@ -111,8 +111,6 @@ function addon:OnEnable()
 	self:RegisterMessage('AdiBags_BagOpened', 'LayoutBags')
 	self:RegisterMessage('AdiBags_BagClosed', 'LayoutBags')
 
-	self:RegisterEvent('CURRENT_SPELL_CAST_CHANGED')
-
 	self:RawHook("OpenAllBags", true)
 	self:RawHook("CloseAllBags", true)
 	self:RawHook("ToggleAllBags", true)
@@ -158,8 +156,6 @@ function addon:OnEnable()
 	self.sectionFont:ApplySettings()
 	self:UpdatePositionMode()
 
-	self:CURRENT_SPELL_CAST_CHANGED('OnEnable')
-
 	self:Debug('Enabled')
 end
 
@@ -186,9 +182,7 @@ function addon:UpgradeProfile()
 	local profile = self.db.profile
 
 	-- Convert old ordering setting
-	if profile.laxOrdering == true then
-		profile.laxOrdering = 1
-	end
+	profile.laxOrdering = nil
 
 	-- Convert old anchor settings
 	local oldData = profile.anchor
@@ -268,18 +262,6 @@ if BugGrabber then
 			addon:Debug('Error:', errorObject.message)
 		end
 	end)
-end
-
---------------------------------------------------------------------------------
--- Track spell targeting
---------------------------------------------------------------------------------
-
-function addon:CURRENT_SPELL_CAST_CHANGED(event)
-	local spellIsTargeting = SpellIsTargeting()
-	if self.spellIsTargeting ~= spellIsTargeting then
-		self.spellIsTargeting = spellIsTargeting
-		self:SendMessage('AdiBags_SpellIsTargetingChanged', spellIsTargeting)
-	end
 end
 
 --------------------------------------------------------------------------------
@@ -411,7 +393,7 @@ function addon:ConfigChanged(vars)
 	end
 	if vars.sortingOrder then
 		return self:SetSortingOrder(self.db.profile.sortingOrder)
-	elseif vars.maxHeight or vars.maxWidth or vars.laxOrdering then
+	elseif vars.maxHeight then
 		return self:SendMessage('AdiBags_LayoutChanged')
 	elseif vars.scale then
 		return self:LayoutBags()

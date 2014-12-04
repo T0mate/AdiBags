@@ -83,8 +83,6 @@ function sectionProto:OnCreate()
 	header:SetHeight(HEADER_SIZE)
 	header:EnableMouse(true)
 	header:SetText("DUMMY")
-	--header:SetHighlightTexture([[Interface\BUTTONS\UI-Panel-Button-Highlight]], "ADD")
-	--header:GetHighlightTexture():SetTexCoord(4/128, 76/128, 4/32, 18/32)
 	header:GetFontString():SetAllPoints()
 	addon.SetupTooltip(header, self.ShowHeaderTooltip, "ANCHOR_NONE")
 	self.Header = header
@@ -119,11 +117,10 @@ function sectionProto:OnAcquire(container, name, category)
 	self.height = 0
 	self.count = 0
 	self.total = 0
-	self.dirtyLevel = 0
 	self.container = container
-	self:RegisterMessage('AdiBags_OrderChanged')
+	self:RegisterMessage('AdiBags_OrderChanged', 'FullLayout')
+	self.Header:SetText(self.name)
 	self:UpdateHeaderScripts()
-	self:UpdateTitle()
 end
 
 function sectionProto:OnRelease()
@@ -133,10 +130,6 @@ function sectionProto:OnRelease()
 	self.name = nil
 	self.category = nil
 	self.container = nil
-end
-
-function sectionProto:AdiBags_OrderChanged()
-	self:ReorderButtons()
 end
 
 function sectionProto:GetOrder()
@@ -163,35 +156,6 @@ function sectionProto:SetCollapsed(collapsed)
 		self:SendMessage('AdiBags_LayoutChanged')
 	end
 end
-
-function sectionProto:SetDirtyLevel(level)
-	if level > self.dirtyLevel then
-		self:Debug('dirtyLevel raise from', self.dirtyLevel, 'to', level)
-		self.dirtyLevel = level
-		self:UpdateTitle()
-	end
-end
-
-function sectionProto:GetDirtyLevel()
-	return self.dirtyLevel
-end
-
-function sectionProto:ClearDirtyLevel()
-	if self.dirtyLevel ~= 0 then
-		self.dirtyLevel = 0
-		self:UpdateTitle()
-		self:Debug('dirtyLevel cleared')
-	end
-end
-
-function sectionProto:UpdateTitle()
-	if self.dirtyLevel >= 2 then
-		self.Header:SetText("*"..(self.name or ""))
-	else
-		self.Header:SetText(self.name)
-	end
-end
-
 
 --------------------------------------------------------------------------------
 -- Section hooks
@@ -256,40 +220,34 @@ end
 --------------------------------------------------------------------------------
 
 function sectionProto:AddItemButton(slotId, button)
-	if not self.buttons[button] then
-		button:SetSection(self)
-		self.count = self.count + 1
-		self.buttons[button] = slotId
-		if self:IsCollapsed() then
-			button:Hide()
-		else
-			for index = 1, self.total do
-				if self.freeSlots[index] then
-					button:Show()
-					return self:PutButtonAt(button, index)
-				end
-			end
-			button:Hide()
-			self:Debug('No room for new button')
-			self:SetDirtyLevel(2)
-		end
+	if self.buttons[button] then
+		return
 	end
+	button:SetSection(self)
+	self.count = self.count + 1
+	self.buttons[button] = slotId
+	if self:IsCollapsed() then
+		return button:Hide()
+	end
+	local index = next(self.freeSlots)
+	if not index then
+		return button:Hide()
+	end
+	self:PutButtonAt(button, index)
+	button:Show()
 end
 
 function sectionProto:RemoveItemButton(button)
-	if self.buttons[button] then
-		local index = self.slots[button]
-		if index and index <= self.total then
-			self.freeSlots[index] = true
-			if index < self.count then
-				self:Debug('Not-last button removed')
-				self:SetDirtyLevel(1)
-			end
-		end
-		self.count = self.count - 1
-		self.slots[button] = nil
-		self.buttons[button] = nil
+	if not self.buttons[button] then
+		return
 	end
+	local index = self.slots[button]
+	if index and index <= self.total then
+		self.freeSlots[index] = true
+	end
+	self.count = self.count - 1
+	self.slots[button] = nil
+	self.buttons[button] = nil
 end
 
 function sectionProto:IsEmpty()
@@ -324,42 +282,17 @@ end
 -- Layout
 --------------------------------------------------------------------------------
 
-function sectionProto:PutButtonAt(button, index, clean)
+function sectionProto:PutButtonAt(button, index)
 	local oldIndex = self.slots[button]
 	if oldIndex ~= index then
 		if oldIndex then
 			self.freeSlots[oldIndex] = true
-		end
-		if not clean then
-			self:Debug('Moved button around')
-			self:SetDirtyLevel(1)
 		end
 		self.slots[button] = index
 		self.freeSlots[index] = nil
 	end
 	local row, col = floor((index-1) / self.width), (index-1) % self.width
 	button:SetPoint("TOPLEFT", self, "TOPLEFT", col * SLOT_OFFSET, - HEADER_SIZE - row * SLOT_OFFSET)
-end
-
-function sectionProto:FitInSpace(maxWidth, maxHeight, xOffset)
-	maxWidth, maxHeight = ceil(maxWidth), ceil(maxHeight)
-	local maxColumns = floor((maxWidth + ITEM_SPACING) / SLOT_OFFSET)
-	local count = self.count
-
-	local maxRows = floor((maxHeight - HEADER_SIZE + ITEM_SPACING) / SLOT_OFFSET)
-	local numColumns = min(count, maxColumns)
-	local numRows = max(ceil(count / numColumns), maxRows)
-	numColumns = ceil(count / numRows)
-
-	local width = numColumns * SLOT_OFFSET - ITEM_SPACING
-	local height = numRows * SLOT_OFFSET - ITEM_SPACING + HEADER_SIZE
-
-	local occupation = width * height - ((SLOT_OFFSET * ITEM_SIZE) * (numColumns * numRows - count) - ITEM_SPACING)
-	local gap = max(0, height - maxHeight) * xOffset
-	if gap < occupation then
-		local area = height * max(height, maxHeight)
-		return true, numColumns, numRows, gap + area - occupation
-	end
 end
 
 function sectionProto:SetSizeInSlots(width, height)
@@ -369,9 +302,7 @@ function sectionProto:SetSizeInSlots(width, height)
 			SLOT_OFFSET * width - ITEM_SPACING,
 			HEADER_SIZE + SLOT_OFFSET * height - ITEM_SPACING
 		)
-		self:SetDirtyLevel(1)
 	end
-	return self:GetSize()
 end
 
 function sectionProto:SetHeaderOverflow(overflow)
@@ -386,18 +317,15 @@ function sectionProto:SetHeaderOverflow(overflow)
 end
 
 function sectionProto:Layout()
-	if self.dirtyLevel > 0 then
-		self:ReorderButtons()
-	end
+	-- NOOP
 end
 
 local CompareButtons
 local buttonOrder = {}
-function sectionProto:ReorderButtons()
-	if not self:IsVisible() then return end
-	--self:Debug('ReorderButtons, count=', self.count)
-
-	if self:IsCollapsed() then
+function sectionProto:FullLayout()
+	if not self:IsVisible() then
+		return
+	elseif self:IsCollapsed() then
 		return self:Hide()
 	end
 
@@ -411,13 +339,12 @@ function sectionProto:ReorderButtons()
 	wipe(freeSlots)
 	wipe(slots)
 	for index, button in ipairs(buttonOrder) do
-		self:PutButtonAt(button, index, true)
+		self:PutButtonAt(button, index)
 	end
 	for index = self.count + 1, self.total do
 		freeSlots[index] = true
 	end
 
-	self:ClearDirtyLevel()
 	wipe(buttonOrder)
 end
 
