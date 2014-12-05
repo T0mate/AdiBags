@@ -380,8 +380,7 @@ function buttonProto:UpdateBorder(isolatedEvent)
 		texture, r, g, b, a, x1, x2, y1, y2, blendMode = GetBorder(self.bag, self.slot, self.itemLink or self.itemId, addon.db.profile)
 	end
 	self.IconQuestTexture:Hide()
-	self.IconQuestTexture:SetSize(addon.ITEM_SIZE+3, addon.ITEM_SIZE+3)
-	self.NormalTexture:SetSize(addon.ITEM_SIZE+20, addon.ITEM_SIZE+20)
+	self.NormalTexture:Hide()
 	local border = self.borderTextureIcon
 	border:SetTexture(r or 1, g or 1, b or 1, a or 1)
 	--border:SetTexCoord(x1 or 0, x2 or 1, y1 or 0, y2 or 1)
